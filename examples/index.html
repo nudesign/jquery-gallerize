@@ -1,0 +1,47 @@
+<html>
+  <head>
+    <title>gallerize</title>
+    <style type="text/css" media="screen">
+      body { background: #FFFFFF; color: #000; font-family: Helvetica, Arial, Verdana; font-size: 12px; line-height: 15px; }
+      img { max-width: 100%; }
+      .floated { display: inline; float: left; margin: 25px; }
+      ul.gallery_one { width: 500px; margin: 0; padding: 0; }
+        ul.gallery_one li { margin: 0; padding: 0; }
+      ul.gallery_two { float: left; width: 700px; margin: 0; padding: 0; }
+        ul.gallery_two li { margin: 0; padding: 0; }
+
+      .paginator { list-style: none; margin: 0; padding: 0; }
+        .paginator li { display: inline; float: left; width: 50px; height: 30px; margin: 10px 5px; padding: 0; }
+    </style>
+    <script type="text/javascript" charset="utf-8" src="js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="../src/jquery-gallerize.js"></script>
+    <script type="text/javascript" charset="utf-8">
+      $(document).ready(function () {
+        $(".gallerize").each(function (i, el) {
+          if (i === 0) {
+            $(el).gallerize({transition_fx: 'slide', next_button: ".gallerize"});
+          } else {
+            $(el).gallerize({transition_fx: 'fade', next_button: ".gallerize"});
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="floated">
+      <ul class="gallery_one gallerize">
+        <li data-thumb_src="img/gallerize_thumb-01.jpg"><img src="img/gallerize_img-01.jpg" alt="gallerize image 1" title="gallerize image 1"></li>
+        <li data-thumb_src="img/gallerize_thumb-02.jpg"><img src="img/gallerize_img-02.jpg" alt="gallerize image 2" title="gallerize image 2"></li>
+        <li data-thumb_src="img/gallerize_thumb-03.jpg"><img src="img/gallerize_img-03.jpg" alt="gallerize image 3" title="gallerize image 3"></li>
+        <li data-thumb_src="img/gallerize_thumb-04.jpg"><img src="img/gallerize_img-04.jpg" alt="gallerize image 4" title="gallerize image 4"></li>
+      </ul>
+    </div>
+    <div class="floated">
+      <ul class="gallery_two gallerize">
+        <li data-thumb_src="img/gallerize_thumb-05.jpg"><img src="img/gallerize_img-05.jpg" alt="gallerize image 5" title="gallerize image 5"></li>
+        <li data-thumb_src="img/gallerize_thumb-06.jpg"><img src="img/gallerize_img-06.jpg" alt="gallerize image 6" title="gallerize image 6"></li>
+        <li data-thumb_src="img/gallerize_thumb-07.jpg"><img src="img/gallerize_img-07.jpg" alt="gallerize image 7" title="gallerize image 7"></li>
+      </ul>
+    </div>
+  </body>
+</html>
