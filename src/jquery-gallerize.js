@@ -11,7 +11,7 @@
       timeout: 4000,
       transition_duration: 1000,
       transitionFx: 'fade',
-      autostart: false,
+      autostart: true,
       stopAfterUserAction: true,
       items: "", // children itens selector
       next_button: false, // must be a child of the original gallery element
@@ -30,12 +30,13 @@
 
       var $gallery_window;
       var $children;
-
+      var animate_index = 0;
       var $paginator;
       var $paginator_children;
       var paginator_increment;
       var currentPaginatorSlide;
       var maxVisibleThumbs;
+      var animation;
       
       var init = function () {
         $gallery_window = $("<div class='gallery_window' />").css({'overflow': 'hidden', 'width': increment, 'outline': '1px solid green'});
@@ -48,9 +49,29 @@
         setupGallery();
         setupPaginator();
         bindListeners();
+        setupSlideShow();
+      }
+      
+      var animateSlideShow = function(){
+        if (animate_index === ($children.length - 1)){
+           animate_index = 0;
+          }else {
+           animate_index++;
+          }
         
+        moveToSlide(animate_index);
+      
       }
 
+      var setupSlideShow = function() {
+      if (settings.autostart === true) {
+        animation = setInterval(animateSlideShow , settings.timeout);
+        
+      }else {
+        return false;
+      }
+      }
+      
       var getMaxHeight = function () {
         var max = 0;
         $children.each(function (i, el) {
@@ -164,6 +185,7 @@
       }
       var moveToSlide = function (index) {
         index = parseInt(index, 10);
+        animate_index = index;
         if (index < 0 || index > $children.length) { return false; }
         
         $($children.removeClass(settings.active_slide_class).get(index)).addClass(settings.active_slide_class);
