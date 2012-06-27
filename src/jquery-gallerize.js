@@ -170,7 +170,7 @@
         index = parseInt(index, 10);
         currentPaginatorSlide = index;
 
-        if(currentPaginatorSlide >= $children.length - 1){
+        if(currentPaginatorSlide >= $children.length - maxVisibleThumbs - 1){
           currentPaginatorSlide = ($children.length - maxVisibleThumbs);
           index = currentPaginatorSlide;
         }
