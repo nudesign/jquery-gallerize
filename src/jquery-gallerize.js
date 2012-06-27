@@ -11,7 +11,7 @@
       timeout: 4000,
       transition_duration: 1000,
       transitionFx: 'fade',
-      autostart: true,
+      autostart: false,
       stopAfterUserAction: true,
       stopOnHover: false,
       items: "", // children itens selector
@@ -72,7 +72,7 @@
             moveToSlide(0);
             break;
           default:
-            document.write('<br>Efeito invalido!');
+            document.write( settings.transitionFx + ' não é um efeito valido!<br>');
             break;
         }
       }
@@ -135,7 +135,7 @@
           }
         });
 
-        $pag.bind('click.gallerize', function (e) {
+        $pag.on('click.gallerize', function (e) {
           $li = $(e.target).parents(settings.items);
           if ($li.length != 1) { return; }
           moveToSlide($li.data('index'));
@@ -182,21 +182,12 @@
       }
 
       var movePaginatorRight = function () {
-        if (currentPaginatorSlide >= ($children.length)) {
-         movePaginatorToSlide($children.length - maxVisibleThumbs);
-        }
-        else{
         movePaginatorToSlide(currentPaginatorSlide + maxVisibleThumbs);
-        }
       };
 
       var movePaginatorLeft = function () {
-        if (currentPaginatorSlide <= 0) {
-         movePaginatorToSlide(0);
-        }
-        else{
+
         movePaginatorToSlide(currentPaginatorSlide - maxVisibleThumbs );
-        }
       };
       
       var getPaginatorChildren = function () {
@@ -239,22 +230,22 @@
 
       var bindListeners = function () {
         if (settings.next_button !== false) {
-          $this.parents('.gallery_window').find(settings.next_button).bind('click.gallerize', function () {
+          $this.parents('.gallery_window').find(settings.next_button).on('click.gallerize', function () {
             moveRight();
           });
         }
         if (settings.prev_button !== false) {
-          $this.parents('.gallery_window').find(settings.prev_button).bind('click.gallerize', function () {
+          $this.parents('.gallery_window').find(settings.prev_button).on('click.gallerize', function () {
             moveLeft();
           });
         }
-        $(document).bind('keydown.gallerize', function (e) {
+        $(document).on('keydown.gallerize', function (e) {
           if (e.keyCode === 37) { moveLeft(); }
           if (e.keyCode === 39) { moveRight(); }
         });
 
-        $paginator_left.bind('click.gallerize', function ()    { movePaginatorLeft();  });
-        $paginator_right.bind('click.gallerize', function ()   { movePaginatorRight(); });
+        $paginator_left.on('click.gallerize', function ()    { movePaginatorLeft();  });
+        $paginator_right.on('click.gallerize', function ()   { movePaginatorRight(); });
 
         if(settings.stopAfterUserAction === true && settings.stopOnHover === false){
           $(document).one('keydown.gallerize', function (e) {
