@@ -167,8 +167,17 @@
       }
 
       var movePaginatorToSlide = function (index) {
+        index = parseInt(index, 10);
         currentPaginatorSlide = index;
-        
+
+        if(currentPaginatorSlide >= $children.length - 1){
+          currentPaginatorSlide = ($children.length - maxVisibleThumbs);
+          index = currentPaginatorSlide;
+        }
+        else if(currentPaginatorSlide <= 0){
+          currentPaginatorSlide = 0;
+          index = currentPaginatorSlide;
+        }
         $paginator.animate({'margin-left': -((index * paginator_increment) - $paginator_left.outerWidth(true) )}, settings.transition_duration);
       }
 
