@@ -40,7 +40,7 @@
 
 
       var init = function () {
-        $gallery_window = $("<div class='gallery_window' />").css({'overflow': 'hidden', 'width': increment, 'outline': '1px solid green'});
+        $gallery_window = $("<div class='gallery_window' />").css({'overflow': 'hidden', 'width': increment, 'outline': '1px '});
 
         $children = $this.children(settings.items);
         if (settings.items === "") {
@@ -52,7 +52,7 @@
         bindListeners();
         animation = startSlideShow();
       }
-/******************GALLERY****************************/
+/******************GALLERY**********************/
       var setupGallery = function() {
         switch (settings.transitionFx)
         {
@@ -76,6 +76,53 @@
             break;
         }
       }
+
+      var moveToSlide = function (index) {
+        index = parseInt(index, 10);
+        currentSlide = index;
+
+        if(currentSlide >= $children.length){
+          currentSlide = 0;
+          index = currentSlide;
+        }
+        else if(currentSlide < 0){
+          currentSlide = ($children.length - 1);
+          index = currentSlide;
+        }
+
+        
+        $($children.removeClass(settings.active_slide_class).get(index)).addClass(settings.active_slide_class);
+
+        if ($paginator_children !== undefined) {
+          $($paginator_children.removeClass(settings.active_paginator_class).get(index)).addClass(settings.active_paginator_class);
+        }
+
+        switch (settings.transitionFx) {
+          case 'fade':
+             $children.stop(true, false).fadeOut(settings.transition_duration / 2);
+             setTimeout(function () { $($children.get(index)).stop(true, true).fadeIn(settings.transition_duration / 2) }, ((settings.transition_duration / 2) + 10));
+             break;
+          case 'slide':
+            var newLeft = -(index * increment);
+            $this.stop(true, false).animate({'margin-left': newLeft}, settings.transition_duration, function () {
+            });
+            break;
+          case 'noFx':
+            $children.css('display', 'none');
+            $children.filter('.active').css('display', 'block');
+            break;
+        }
+      };
+
+      var moveLeft = function () {
+        moveToSlide(--currentSlide);
+        movePaginatorToSlide(currentSlide);
+      };
+
+      var moveRight = function () {
+        moveToSlide(++currentSlide);
+        movePaginatorToSlide(currentSlide);
+      };
 /******************GALLERY PAGINATOR*******************/
       var setupPaginator = function () {
         $pag = $("<ul class='paginator' />");        
@@ -107,14 +154,9 @@
 
         $paginator = $("ul.paginator");
         
-        $paginator_left = $("<a href='javascript://' class='paginatorLeft' />").bind('click.gallerize', function ()        { movePaginatorLeft(); });
+        $paginator_left = $("<a href='javascript://' class='paginatorLeft' />");
 
-        $paginator_right = $("<a href='javascript://' class='paginatorRight' />").bind('click.gallerize', function ()   { movePaginatorRight(); });
-
-        if (settings.stopAfterUserAction === true && settings.stopOnHover === false) {
-           $paginator_left.one('click.gallerize', function(){ animation = stopSlideShow(); });
-           $paginator_right.one('click.gallerize', function(){ animation = stopSlideShow(); }); 
-        }
+        $paginator_right = $("<a href='javascript://' class='paginatorRight' />");
 
         $(".gallery_window").css('position', 'relative').append($paginator_left).append($paginator_right);
         
@@ -126,75 +168,32 @@
 
       var movePaginatorToSlide = function (index) {
         currentPaginatorSlide = index;
-        currentSlide = index;
-        $paginator.animate({'margin-left': -((index * paginator_increment) - $paginator_left.outerWidth(true) )},       settings.transition_duration);
+        
+        $paginator.animate({'margin-left': -((index * paginator_increment) - $paginator_left.outerWidth(true) )}, settings.transition_duration);
       }
 
       var movePaginatorRight = function () {
-        if (currentPaginatorSlide >= ($children.length - 1)) {
-          return;
+        if (currentPaginatorSlide >= ($children.length)) {
+         movePaginatorToSlide($children.length - maxVisibleThumbs);
         }
+        else{
         movePaginatorToSlide(currentPaginatorSlide + maxVisibleThumbs);
+        }
       };
 
       var movePaginatorLeft = function () {
         if (currentPaginatorSlide <= 0) {
-          return;
+         movePaginatorToSlide(0);
         }
+        else{
         movePaginatorToSlide(currentPaginatorSlide - maxVisibleThumbs );
+        }
       };
       
       var getPaginatorChildren = function () {
         return $this.parents(".gallery_window").find(settings.paginator_class).children();
       }
-/******************GALLERY SLIDER**********************/
-      var moveToSlide = function (index) {
-        index = parseInt(index, 10);
-        currentSlide = index;
-        if(currentSlide >= $children.length){
-          currentSlide = 0;
-          index = currentSlide;
-        }
-        else if(currentSlide < 0){
-          currentSlide = ($children.length - 1);
-          index = currentSlide;
-        }
-        if (index < 0 || index > $children.length) { return false; }
-        
-        $($children.removeClass(settings.active_slide_class).get(index)).addClass(settings.active_slide_class);
-        if ($paginator_children !== undefined) {
-          $($paginator_children.removeClass(settings.active_paginator_class).get(index)).addClass(settings.active_paginator_class);
-        }
-        switch (settings.transitionFx) {
-          case 'fade':
-             $children.stop(true, false).fadeOut(settings.transition_duration / 2);
-             setTimeout(function () { $($children.get(index)).stop(true, true).fadeIn(settings.transition_duration / 2) }, ((settings.transition_duration / 2) + 10));
-             break;
-          case 'slide':
-            var newLeft = -(index * increment);
-            $this.stop(true, false).animate({'margin-left': newLeft}, settings.transition_duration, function () {
-            });
-            break;
-          case 'noFx':
-            $children.css('display', 'none');
-            $children.filter('.active').css('display', 'block');
-            break;
-        }
-      };
 
-      var moveLeft = function () {
-        if (currentSlide <= 0) {
-          return;
-        }
-        moveToSlide(--currentSlide);
-      };
-
-      var moveRight = function () {
-        if (currentSlide >= ($children.length - 1)) {
-          return;
-        }
-        moveToSlide(++currentSlide);
-      };
 /******************GALLERY SLIDESHOW**********************/
       var setupSlideShow = function() {
         if (currentSlide === ($children.length - 1)) {
@@ -241,15 +240,20 @@
           });
         }
         $(document).bind('keydown.gallerize', function (e) {
-          if (e.keyCode === 37) { moveToSlide(--currentSlide); }
-          if (e.keyCode === 39) { moveToSlide(++currentSlide); }
-          movePaginatorToSlide(currentSlide);
+          if (e.keyCode === 37) { moveLeft(); }
+          if (e.keyCode === 39) { moveRight(); }
         });
+
+        $paginator_left.bind('click.gallerize', function ()    { movePaginatorLeft();  });
+        $paginator_right.bind('click.gallerize', function ()   { movePaginatorRight(); });
+
         if(settings.stopAfterUserAction === true && settings.stopOnHover === false){
           $(document).one('keydown.gallerize', function (e) {
-            if (e.keyCode === 37) { animation = stopSlideShow(); console.log(animation) }
+            if (e.keyCode === 37) { animation = stopSlideShow(); }
             if (e.keyCode === 39) { animation = stopSlideShow(); }
           });
+           $paginator_left.one('click.gallerize', function(){ animation = stopSlideShow(); });
+           $paginator_right.one('click.gallerize', function(){ animation = stopSlideShow(); });
         }
       }
 
