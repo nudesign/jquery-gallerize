@@ -26,7 +26,7 @@
       var $this = $(this);
       var animation; //animation of slideShow
       var $children;
-      var currentPaginatorSlide;
+      var currentPaginatorSlide = 0;
       var currentSlide = 0;
       var $gallery_window;
       var increment = $this.width();
