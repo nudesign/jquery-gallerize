@@ -61,7 +61,7 @@
           $this.stop(true, false).animate({'margin-left': newLeft}, settings.transition_duration);
             break;
         }
-
+        Vars.currentSlide = index;
         return index;
       },
       
@@ -269,7 +269,24 @@
     }
     if ( methods[method] ) {
       if ( method === 'startSlideShow') {
-        return Vars.animation = methods.startSlideShow(settings.timeout);
+        if ( typeof options === 'object' ) {
+          return Vars.animation = methods.startSlideShow(settings.timeout);
+        }
+        else if ( typeof options === 'number' ) {
+          settings.timeout = options;
+          return Vars.animation = methods.startSlideShow(options);
+        }
+        else {
+          $.error("startSlideShow input inválido")
+        }
+      }
+      else if ( method === 'moveToSlide' ) {
+        if ( typeof options === "number" ) { 
+          return methods.moveToSlide(options);
+        }
+        else {
+          $.error("moveToSlide input inválido")
+        }
       }
       else {
         return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
