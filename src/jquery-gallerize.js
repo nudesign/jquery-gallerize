@@ -10,6 +10,7 @@
       return this.each(function(){
         var $this = $(this);
         Vars.increment = $this.width();
+        Vars.$gallery = $this;
         Vars.$gallery_window = $("<div class='gallery_window' />");
         Vars.$gallery_window.css({'overflow': 'hidden', 'width': Vars.increment, 'outline': '1px '});
         Vars.$children = $this.children(settings.items);
@@ -29,9 +30,9 @@
         }
       });
     },
-    
     moveToSlide: function (index) {
       index = parseInt(index, 10);
+      var $this = $(this);
 
       if (index >= Vars.$children.length) {
         index = 0;
@@ -39,8 +40,6 @@
       else if (index < 0) {
         index = (Vars.$children.length - 1);
       }
-
-        
       $(Vars.$children.removeClass(settings.active_slide_class)[index]).addClass(settings.active_slide_class);
 
       if (Vars.$paginator_children !== undefined) {
@@ -57,9 +56,9 @@
            setTimeout(function () { Vars.$children.filter('.active').stop(true, true).fadeIn(parseInt(settings.transition_duration / 2, 10)) }, (parseInt(settings.transition_duration / 2, 10) + 100));
            break;
         case 'slide':
-          var newLeft = -(index * increment);
-          $this.stop(true, false).animate({'margin-left': newLeft}, settings.transition_duration);
-            break;
+          var newLeft = -(index * Vars.increment);       
+          $(Vars.$gallery).stop(true, false).animate({'margin-left': newLeft}, parseInt(settings.transition_duration, 10));
+          break;
         }
         Vars.currentSlide = index;
         return index;
@@ -94,16 +93,14 @@
           Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentSlide);
         }, timeout);
       },
-  
-
   };
   
   var privateMethods = {
     setupGallery: function () {
-      return $(this).each(function(){
+      return $(this).each( function() {
         var $this = $(this);
-
-        switch (settings.transitionFx)
+        console.log(settings.transitionFx)
+        switch ( settings.transitionFx )
         {
           case 'noFx':
           case 'fade':
@@ -113,11 +110,11 @@
             break;
           case 'slide':
             $this.css('width', Vars.$children.length * Vars.increment);
-            Vars.$children.css({'float': 'left', 'width': Vars.increment});
-            Vars.currentSlide = methods.moveToSlide(0);
+            Vars.$children.css({'float': 'left', 'width': Vars.increment});     
+            Vars.currentSlide = methods.moveToSlide(0);      
             break;
           default:
-            document.write( settings.transitionFx + ' não é um efeito valido!<br>');
+            $.error( settings.transitionFx + ' não é um efeito valido!<br>');
             break;
         }   
       });
@@ -181,11 +178,11 @@
       },
 
       movePaginatorRight: function () {
-        return Vars.currentPaginatorSlide = movePaginatorToSlide(Vars.currentPaginatorSlide + maxVisibleThumbs);
+        return Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentPaginatorSlide + Vars.maxVisibleThumbs);
       },
 
       movePaginatorLeft: function () {
-        return Vars.currentPaginatorSlide = movePaginatorToSlide(Vars.currentPaginatorSlide - maxVisibleThumbs );
+        return Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentPaginatorSlide - Vars.maxVisibleThumbs );
       },
       
       bindListeners: function () {
@@ -234,14 +231,15 @@
       $children: undefined,
       currentPaginatorSlide: 0,
       currentSlide: 0,
+      $gallery: undefined,
       $gallery_window: undefined,
       increment: undefined,
+      isAnimating: undefined,   
       maxHeight: undefined,
       maxVisibleThumbs: undefined,
       $paginator: undefined,
       $paginator_children: undefined,
-      paginator_increment: undefined,
-      isAnimating: undefined   
+      paginator_increment: undefined
   };
   
   var settings = {
@@ -269,10 +267,7 @@
     }
     if ( methods[method] ) {
       if ( method === 'startSlideShow') {
-        if ( typeof options === 'object' ) {
-          return Vars.animation = methods.startSlideShow(settings.timeout);
-        }
-        else if ( typeof options === 'number' ) {
+        if ( typeof options === 'number' ) {
           settings.timeout = options;
           return Vars.animation = methods.startSlideShow(options);
         }
@@ -292,9 +287,9 @@
         return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
       }
     } else if ( typeof method === 'object' || ! method ) {
-      return methods.init.apply( this, arguments );
+        return methods.init.apply( this, arguments );
     } else {
-      $.error( 'Method ' +  method + ' does not exist on jQuery.gallerize' );
+        $.error( 'Method ' +  method + ' does not exist on jQuery.gallerize' );
     }    
   };
 })( jQuery );
