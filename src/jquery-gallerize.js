@@ -66,23 +66,30 @@
       },
       
       moveLeft: function () {
-        Vars.currentSlide = methods.moveToSlide(--currentSlide);
-        Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(currentSlide);
+        Vars.currentSlide = methods.moveToSlide(--Vars.currentSlide);
+        Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentSlide);
+        return Vars.currentSlide
       },
 
       moveRight: function () {
-        Vars.currentSlide = methods.moveToSlide(++currentSlide);
-        Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(currentSlide);
+        Vars.currentSlide = methods.moveToSlide(++Vars.currentSlide);
+        Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentSlide);
+        return Vars.currentSlide
       },
 
       stopSlideShow: function() {
+        Vars.isAnimating = false;
         clearInterval(Vars.animation);
         return Vars.animation;
       },
 
       startSlideShow: function (timeout) {
-      console.log("a")
+        if (Vars.isAnimating === true) {
+          methods.stopSlideShow();
+        }
+        Vars.isAnimating = true;
         return setInterval(function () {
+          parseInt(timeout);
           Vars.currentSlide = methods.moveToSlide(++Vars.currentSlide);
           Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentSlide);
         }, timeout);
@@ -233,7 +240,8 @@
       maxVisibleThumbs: undefined,
       $paginator: undefined,
       $paginator_children: undefined,
-      paginator_increment: undefined   
+      paginator_increment: undefined,
+      isAnimating: undefined   
   };
   
   var settings = {
@@ -252,20 +260,24 @@
   
   $.fn.gallerize = function(method, options) {
 
-    if (method && typeof(method) == 'object') {
+    if (method && typeof method == 'object') {
       options = method;
-      method = undefined;
       $.extend(settings, options);
     }
-    else if(options && typeof(options) == 'object'){
+    else if(options && typeof options == 'object'){
       $.extend(settings, options);
     }
     if ( methods[method] ) {
-      return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+      if ( method === 'startSlideShow') {
+        return Vars.animation = methods.startSlideShow(settings.timeout);
+      }
+      else {
+        return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+      }
     } else if ( typeof method === 'object' || ! method ) {
       return methods.init.apply( this, arguments );
     } else {
-      $.error( 'Method ' +  method + ' does not exist on jQuery.tooltip' );
+      $.error( 'Method ' +  method + ' does not exist on jQuery.gallerize' );
     }    
   };
 })( jQuery );
