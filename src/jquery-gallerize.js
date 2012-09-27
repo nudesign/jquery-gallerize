@@ -117,7 +117,6 @@
       },
 
       startSlideShow: function (timeout) {
-        console.log($(this).data('gallerize').currentSlide)
         var $this = $(this),
             data = $this.data('gallerize'),
             self = this;
@@ -137,16 +136,13 @@
       return this.each( function() {
         var $this = $(this),
             data = $this.data('gallerize');
-        console.log(data.currentSlide)
         switch ( settings.transitionFx )
         {
           case 'noFx':
           case 'fade':
             $this.css({'overflow': 'hidden', 'width': data.increment});
             data.$children.css({'display': 'none', 'float': 'left', 'width' : data.increment});
-            console.log($(this).data('gallerize').currentSlide)
             data.currentSlide = methods.moveToSlide.call($this, 0);
-            console.log($(this).data('gallerize').currentSlide)
             break;
           case 'slide':
             $this.css('width', data.$children.length * data.increment);
@@ -216,7 +212,6 @@
         else if (index <= 0){
           index = 0;
         }
-        console.log(data.$paginator)
         data.$paginator.stop(true, false).animate({'margin-left': -((index * data.paginator_increment) - data.$paginator_left.outerWidth(true) )}, settings.transition_duration);
 
         return index;
