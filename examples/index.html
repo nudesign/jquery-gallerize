@@ -7,7 +7,7 @@
       .floated { display: inline; float: left; margin: 25px; }
       ul.gallery_one { width: 500px; margin: 0; padding: 0; }
         ul.gallery_one li { margin: 0; padding: 0; }
-      ul.gallery_two { float: left; width: 700px; margin: 0; padding: 0; }
+      ul.gallery_two { width: 500px; margin: 0; padding: 0; }
         ul.gallery_two li { margin: 0; padding: 0; }
 
       .paginator { list-style: none; margin: 0; padding: 0; }
@@ -20,17 +20,35 @@
     </style>
     <script type="text/javascript" charset="utf-8" src="js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="../src/jquery-gallerize.js"></script>
+    <script type="text/javascript" charset="utf-8" src="../src/jquery-tooltip.js"></script>
     <script type="text/javascript" charset="utf-8">
       $(document).ready(function () {
-        $(".gallerize").each(function (i, el) {
-          $(el).gallerize( {autostart: false, timeout: 1000, transitionFx: 'slide', next_button: ".gallerize" } );
-        });
+        $(".gallery_one").gallerize("init");
+        $(".gallery_two").gallerize("init");
       });
     </script>
   </head>
   <body>
     <div class="floated">
-      <ul class="gallery_one gallerize">
+      <ul class="gallery_one">
+        <li data-thumb_src="img/gallerize_thumb-01.jpg"><img src="img/gallerize_img-01.jpg" alt="gallerize image 1" title="gallerize image 1"></li>
+        <li data-thumb_src="img/gallerize_thumb-02.jpg"><img src="img/gallerize_img-02.jpg" alt="gallerize image 2" title="gallerize image 2"></li>
+        <li data-thumb_src="img/gallerize_thumb-03.jpg"><img src="img/gallerize_img-03.jpg" alt="gallerize image 3" title="gallerize image 3"></li>
+        <li data-thumb_src="img/gallerize_thumb-04.jpg"><img src="img/gallerize_img-04.jpg" alt="gallerize image 4" title="gallerize image 4"></li>
+        <li data-thumb_src="img/gallerize_thumb-05.jpg"><img src="img/gallerize_img-05.jpg" alt="gallerize image 5" title="gallerize image 5"></li>
+        <li data-thumb_src="img/gallerize_thumb-06.jpg"><img src="img/gallerize_img-06.jpg" alt="gallerize image 6" title="gallerize image 6"></li>
+        <li data-thumb_src="img/gallerize_thumb-07.jpg"><img src="img/gallerize_img-07.jpg" alt="gallerize image 7" title="gallerize image 7"></li>
+        <li data-thumb_src="img/gallerize_thumb-01.jpg"><img src="img/gallerize_img-01.jpg" alt="gallerize image 1" title="gallerize image 1"></li>
+        <li data-thumb_src="img/gallerize_thumb-02.jpg"><img src="img/gallerize_img-02.jpg" alt="gallerize image 2" title="gallerize image 2"></li>
+        <li data-thumb_src="img/gallerize_thumb-03.jpg"><img src="img/gallerize_img-03.jpg" alt="gallerize image 3" title="gallerize image 3"></li>
+        <li data-thumb_src="img/gallerize_thumb-04.jpg"><img src="img/gallerize_img-04.jpg" alt="gallerize image 4" title="gallerize image 4"></li>
+        <li data-thumb_src="img/gallerize_thumb-05.jpg"><img src="img/gallerize_img-05.jpg" alt="gallerize image 5" title="gallerize image 5"></li>
+        <li data-thumb_src="img/gallerize_thumb-06.jpg"><img src="img/gallerize_img-06.jpg" alt="gallerize image 6" title="gallerize image 6"></li>
+        <li data-thumb_src="img/gallerize_thumb-07.jpg"><img src="img/gallerize_img-07.jpg" alt="gallerize image 7" title="gallerize image 7"></li>
+      </ul>
+    </div>
+        <div class="floated">
+      <ul class="gallery_two">
         <li data-thumb_src="img/gallerize_thumb-01.jpg"><img src="img/gallerize_img-01.jpg" alt="gallerize image 1" title="gallerize image 1"></li>
         <li data-thumb_src="img/gallerize_thumb-02.jpg"><img src="img/gallerize_img-02.jpg" alt="gallerize image 2" title="gallerize image 2"></li>
         <li data-thumb_src="img/gallerize_thumb-03.jpg"><img src="img/gallerize_img-03.jpg" alt="gallerize image 3" title="gallerize image 3"></li>

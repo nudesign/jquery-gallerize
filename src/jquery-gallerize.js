@@ -8,42 +8,69 @@
  var methods = {
     init: function () {
       return this.each(function(){
-        var $this = $(this);
-        Vars.increment = $this.width();
-        Vars.$gallery = $this;
-        Vars.$gallery_window = $("<div class='gallery_window' />");
-        Vars.$gallery_window.css({'overflow': 'hidden', 'width': Vars.increment, 'outline': '1px '});
-        Vars.$children = $this.children(settings.items);
-        if (settings.items === "") {
-          settings.items = Vars.$children.get(0).tagName.toLowerCase();
+        var $this = $(this),
+            self = this,
+            data = $this.data('gallerize'),
+            gallery_window = $("<div class='gallery_window' />");
+            gallery_window.css({'overflow': 'hidden' , 'outline': '1px '}); //tenho que setar 'width': increment,
+        if ( ! data ) {
+          var increment = $this.width();
+              gallery = $this,
+              $children = $this.children(settings.items);
+              
+          gallery_window.css("width", increment);
+             
+          $(this).data('gallerize', {
+            animation: undefined, //animation of slideShow
+            $children: $children,
+            currentPaginatorSlide: 0,
+            currentSlide: 0,
+            gallery: gallery,
+            gallery_window: gallery_window,
+            increment: increment,
+            isAnimating: undefined,   
+            maxHeight: undefined,
+            maxVisibleThumbs: undefined,
+            $paginator: undefined,
+            $paginator_children: undefined,
+            paginator_increment: undefined
+            
+          });
+             
         }
-        $this.wrap(Vars.$gallery_window);
-        privateMethods.setupGallery.apply(this);
-        privateMethods.setupPaginator();
-        privateMethods.bindListeners.apply(this);
-        $this.find("img:last").load(function () {
-          Vars.maxHeight = privateMethods.getMaxHeight();
-          $this.css('height', Vars.maxHeight);
+        if (settings.items === "") { settings.items = $children.get(0).tagName.toLowerCase(); }
+        $this.wrap(gallery_window);
+        privateMethods.setupGallery.call($this);
+        privateMethods.setupPaginator.call($this);
+        privateMethods.bindListeners.call($this);
+        
+        var data = $this.data('gallerize');
+        $(window).load(function () {
+          data.maxHeight = privateMethods.getMaxHeight.call($(self));
+          $(self).css('height', data.maxHeight);
         });
+        
         if (settings.autostart === true) {
-          Vars.animation = methods.startSlideShow(settings.timeout);
+          data.animation = methods.startSlideShow.call(this, settings.timeout);
         }
       });
     },
     moveToSlide: function (index) {
+      var $this = $(this),
+          data = $this.data("gallerize");
       index = parseInt(index, 10);
       var $this = $(this);
 
-      if (index >= Vars.$children.length) {
+      if (index >= data.$children.length) {
         index = 0;
       }
       else if (index < 0) {
-        index = (Vars.$children.length - 1);
+        index = (data.$children.length - 1);
       }
-      $(Vars.$children.removeClass(settings.active_slide_class)[index]).addClass(settings.active_slide_class);
+      $(data.$children.removeClass(settings.active_slide_class)[index]).addClass(settings.active_slide_class);
 
-      if (Vars.$paginator_children !== undefined) {
-        $(Vars.$paginator_children.removeClass(settings.active_paginator_class)[index]).addClass(settings.active_paginator_class);
+      if (data.$paginator_children !== undefined) {
+        $(data.$paginator_children.removeClass(settings.active_paginator_class)[index]).addClass(settings.active_paginator_class);
       }
 
       switch (settings.transitionFx) {
@@ -52,66 +79,79 @@
           $children.filter('.active').css('display', 'block');
           break;
         case 'fade':
-           Vars.$children.stop(true, true).fadeOut(parseInt(settings.transition_duration / 2, 10));
-           setTimeout(function () { Vars.$children.filter('.active').stop(true, true).fadeIn(parseInt(settings.transition_duration / 2, 10)) }, (parseInt(settings.transition_duration / 2, 10) + 100));
+           data.$children.stop(true, true).fadeOut(parseInt(settings.transition_duration / 2, 10));
+           setTimeout(function () { data.$children.filter('.active').stop(true, true).fadeIn(parseInt(settings.transition_duration / 2, 10)) }, (parseInt(settings.transition_duration / 2, 10) + 100));
            break;
         case 'slide':
-          var newLeft = -(index * Vars.increment);       
-          $(Vars.$gallery).stop(true, false).animate({'margin-left': newLeft}, parseInt(settings.transition_duration, 10));
+          var newLeft = -(index * data.increment);       
+          $(data.gallery).stop(true, false).animate({'margin-left': newLeft}, parseInt(settings.transition_duration, 10));
           break;
         }
-        Vars.currentSlide = index;
-        return index;
+        data.currentSlide = index;
+        return index; 
       },
       
       moveLeft: function () {
-        Vars.currentSlide = methods.moveToSlide(--Vars.currentSlide);
-        Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentSlide);
-        return Vars.currentSlide
+        var $this = $(this),
+            data = $this.data('gallerize');
+        
+        data.currentSlide = methods.moveToSlide.call(this, --data.currentSlide);
+        data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, data.currentSlide);
+        return data.currentSlide
       },
 
       moveRight: function () {
-        Vars.currentSlide = methods.moveToSlide(++Vars.currentSlide);
-        Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentSlide);
-        return Vars.currentSlide
+        var $this = $(this),
+            data = $this.data('gallerize');
+        
+        data.currentSlide = methods.moveToSlide.call(this, ++data.currentSlide);
+        data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, data.currentSlide);
+        return data.currentSlide
       },
-
       stopSlideShow: function() {
-        Vars.isAnimating = false;
-        clearInterval(Vars.animation);
-        return Vars.animation;
+        var $this = $(this),
+            data = $this.data('gallerize');
+        data.isAnimating = false;
+        clearInterval(data.animation);
+        return data.animation;
       },
 
       startSlideShow: function (timeout) {
-        if (Vars.isAnimating === true) {
-          methods.stopSlideShow();
+        console.log($(this).data('gallerize').currentSlide)
+        var $this = $(this),
+            data = $this.data('gallerize'),
+            self = this;
+        if (data.isAnimating === true) {
+          methods.stopSlideShow.call(this);
         }
-        Vars.isAnimating = true;
         return setInterval(function () {
           parseInt(timeout);
-          Vars.currentSlide = methods.moveToSlide(++Vars.currentSlide);
-          Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentSlide);
+          data.currentSlide = methods.moveToSlide.call($(self), ++data.currentSlide);
+          data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call($(self), data.currentSlide);
         }, timeout);
       },
   };
   
   var privateMethods = {
     setupGallery: function () {
-      return $(this).each( function() {
-        var $this = $(this);
-        console.log(settings.transitionFx)
+      return this.each( function() {
+        var $this = $(this),
+            data = $this.data('gallerize');
+        console.log(data.currentSlide)
         switch ( settings.transitionFx )
         {
           case 'noFx':
           case 'fade':
-            $this.css({'overflow': 'hidden', 'width': Vars.increment});
-            Vars.$children.css({'display': 'none', 'float': 'left', 'width' : Vars.increment});
-            Vars.currentSlide = methods.moveToSlide(0);
+            $this.css({'overflow': 'hidden', 'width': data.increment});
+            data.$children.css({'display': 'none', 'float': 'left', 'width' : data.increment});
+            console.log($(this).data('gallerize').currentSlide)
+            data.currentSlide = methods.moveToSlide.call($this, 0);
+            console.log($(this).data('gallerize').currentSlide)
             break;
           case 'slide':
-            $this.css('width', Vars.$children.length * Vars.increment);
-            Vars.$children.css({'float': 'left', 'width': Vars.increment});     
-            Vars.currentSlide = methods.moveToSlide(0);      
+            $this.css('width', data.$children.length * data.increment);
+            data.$children.css({'float': 'left', 'width': data.increment});     
+            data.currentSlide = methods.moveToSlide.call($this, 0);      
             break;
           default:
             $.error( settings.transitionFx + ' não é um efeito valido!<br>');
@@ -120,10 +160,12 @@
       });
     },
     setupPaginator: function () {
-      return $(this).each(function(){
-        var $pag = $("<ul class='paginator' />");        
+        var $pag = $("<ul class='paginator' />"),
+            $this = $(this),
+            self = this,
+            data = $this.data("gallerize");        
         
-        Vars.$children.each(function (i, el) {
+        data.$children.each(function (i, el) {
           var $el = $(el);
           $el.data('index', i);
           if ($el.data('thumb_src') != undefined) {
@@ -134,119 +176,107 @@
         $pag.on('click.gallerize', function (e) {
           $li = $(e.target).parents(settings.items);
           if ($li.length != 1) { return; }
-          Vars.currentSlide = methods.moveToSlide($li.data('index'));
-          Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide($li.data('index'));
+          data.currentSlide = methods.moveToSlide.call($(self), $li.data('index'));
+          data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call($(self), $li.data('index'));
           e.preventDefault();
         });
         if (settings.stopAfterUserAction === true){
-          $pag.one('click.gallerize' , function (){ Vars.animation = methods.stopSlideShow(); });
+          $pag.one('click.gallerize' , function (){ data.animation = methods.stopSlideShow.call($(self)); });
         }
 
-        Vars.$children.parents('.gallery_window').append($pag);
-        Vars.$paginator_children = $pag.children();
+        data.$children.parents('.gallery_window').append($pag);
+        data.$paginator_children = $pag.children();
         
-        Vars.paginator_increment = Vars.$paginator_children.outerWidth(true);
-        $pag.css('width' , Vars.$paginator_children.length * Vars.paginator_increment);
+        data.paginator_increment = data.$paginator_children.outerWidth(true);
+        $pag.css('width' , data.$paginator_children.length * data.paginator_increment);
 
-        Vars.$paginator = $("ul.paginator");
+        data.$paginator = $(this).parent().find(".paginator");
         
-        Vars.$paginator_left = $("<a href='javascript://' class='paginatorLeft' />");
+        data.$paginator_left = $("<a href='javascript://' class='paginatorLeft' />");
 
-        Vars.$paginator_right = $("<a href='javascript://' class='paginatorRight' />");
+        data.$paginator_right = $("<a href='javascript://' class='paginatorRight' />");
 
-        $(".gallery_window").css('position', 'relative').append(Vars.$paginator_left).append(Vars.$paginator_right);
+        $(".gallery_window").css('position', 'relative');
+        $(this).parent().append(data.$paginator_left).append(data.$paginator_right);
         
-        Vars.$paginator.css('margin-left', Vars.$paginator_left.outerWidth(true));
+        data.$paginator.css('margin-left', data.$paginator_left.outerWidth(true));
         
-        Vars.maxVisibleThumbs = (Vars.increment - (2 * Vars.$paginator_left.outerWidth(true))) / Vars.paginator_increment;
-        Vars.maxVisibleThumbs = Math.floor(Vars.maxVisibleThumbs);
-      });
+        data.maxVisibleThumbs = (data.increment - (2 * data.$paginator_left.outerWidth(true))) / data.paginator_increment;
+        data.maxVisibleThumbs = Math.floor(data.maxVisibleThumbs);
     },
     
       movePaginatorToSlide: function (index) {
+        var $this = $(this),
+            data = $this.data('gallerize');
         index = parseInt(index, 10);
 
-        if (index >= Vars.$children.length - Vars.maxVisibleThumbs){
-          index = (Vars.$children.length - Vars.maxVisibleThumbs);
+        if (index >= data.$children.length - data.maxVisibleThumbs){
+          index = (data.$children.length - data.maxVisibleThumbs);
         }
         else if (index <= 0){
           index = 0;
         }
-        Vars.$paginator.stop(true, false).animate({'margin-left': -((index * Vars.paginator_increment) - Vars.$paginator_left.outerWidth(true) )}, settings.transition_duration);
+        console.log(data.$paginator)
+        data.$paginator.stop(true, false).animate({'margin-left': -((index * data.paginator_increment) - data.$paginator_left.outerWidth(true) )}, settings.transition_duration);
 
         return index;
       },
 
       movePaginatorRight: function () {
-        return Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentPaginatorSlide + Vars.maxVisibleThumbs);
+        var $this = $(this),
+            data = $this.data("gallerize");
+        return data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, data.currentPaginatorSlide + data.maxVisibleThumbs);
       },
 
       movePaginatorLeft: function () {
-        return Vars.currentPaginatorSlide = privateMethods.movePaginatorToSlide(Vars.currentPaginatorSlide - Vars.maxVisibleThumbs );
+        var $this = $(this),
+            data = $this.data("gallerize");
+        return data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, data.currentPaginatorSlide - data.maxVisibleThumbs );
       },
       
       bindListeners: function () {
         return $(this).each(function(){
-          var $this = $(this);
+          var self = this,
+              $this = $(this),
+              data = $this.data("gallerize");
+          
           if (settings.next_button !== false) {
             $this.parents('.gallery_window').find(settings.next_button).on('click.gallerize', function () {
-              methods.moveRight();
+              methods.moveRight.call($(self));
             });
           }
           if (settings.prev_button !== false) {
             $this.parents('.gallery_window').find(settings.prev_button).on('click.gallerize', function () {
-              methods.moveLeft();
+              methods.moveLeft.call($(self));
             });
           }
           $(document).on('keyup.gallerize', function (e) {
-            if (e.keyCode === 37) { methods.moveLeft(); }
-            if (e.keyCode === 39) { methods.moveRight(); }
+            if (e.keyCode === 37) { methods.moveLeft.call($(self)); }
+            if (e.keyCode === 39) { methods.moveRight.call($(self)); }
           });
   
-          Vars.$paginator_left.on('click.gallerize', function ()    { privateMethods.movePaginatorLeft();  });
-          Vars.$paginator_right.on('click.gallerize', function ()   { privateMethods.movePaginatorRight(); });
+          data.$paginator_left.on('click.gallerize', function ()    { privateMethods.movePaginatorLeft.call($(self));  });
+          data.$paginator_right.on('click.gallerize', function ()   { privateMethods.movePaginatorRight.call($(self)); });
 
-          // if(settings.stopAfterUserAction === true){
-          //   $(document).one('keyup.gallerize', function (e) {
-          //     if (e.keyCode === 37) { animation = stopSlideShow(); }
-          //     if (e.keyCode === 39) { animation = stopSlideShow(); }
-          //   });
-          //  $paginator_left.one('click.gallerize', function(){ animation = stopSlideShow(); });
-          //  $paginator_right.one('click.gallerize', function(){ animation = stopSlideShow(); });
-          // }
         });
       },
       getMaxHeight: function () {
-        var max = 0;
-        Vars.$children.each(function (i, el) {
+        var max = 0,
+            $this = $(this),
+            data = $this.data("gallerize");
+        data.$children.each(function (i, el) {
           max = Math.max(max, parseInt($(el).height(), 10));
         });
         return max;
       }
       
   };
-  
-  var Vars = {
-      animation: undefined, //animation of slideShow
-      $children: undefined,
-      currentPaginatorSlide: 0,
-      currentSlide: 0,
-      $gallery: undefined,
-      $gallery_window: undefined,
-      increment: undefined,
-      isAnimating: undefined,   
-      maxHeight: undefined,
-      maxVisibleThumbs: undefined,
-      $paginator: undefined,
-      $paginator_children: undefined,
-      paginator_increment: undefined
-  };
-  
+    
   var settings = {
       timeout: 4000,
       transition_duration: 1000,
       transitionFx: 'fade',
-      autostart: false,
+      autostart: true,
       stopAfterUserAction: true,
       items: "", // children itens selector
       next_button: false, // must be a child of the original gallery element
@@ -269,7 +299,7 @@
       if ( method === 'startSlideShow') {
         if ( typeof options === 'number' ) {
           settings.timeout = options;
-          return Vars.animation = methods.startSlideShow(options);
+          return data.animation = methods.startSlideShow.call(this, options);
         }
         else {
           $.error("startSlideShow input inválido")
@@ -277,7 +307,7 @@
       }
       else if ( method === 'moveToSlide' ) {
         if ( typeof options === "number" ) { 
-          return methods.moveToSlide(options);
+          return methods.moveToSlide.call(this, options);
         }
         else {
           $.error("moveToSlide input inválido")
