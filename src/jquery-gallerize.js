@@ -200,14 +200,14 @@ var Paginator = function (obj) {
       });
 
       $pag.on('click.gallerize', function (e) {
-        $li = $(e.target).parents(self.gallery.settings.items);
-        if ($li.length != 1) { return; }
+        var $li = $(e.target).parents(self.gallery.settings.items);
+        if ($li.length !== 1) { return; }
         self.gallery.currentSlide = self.gallery.moveToSlide($li.data('index'));
         self.currentPaginatorSlide = self.moveDefaultPaginatorToSlide($li.data('index'));
         e.preventDefault();
       });
       
-      if (settings.stopAfterUserAction === true){
+      if (this.gallery.settings.stopAfterUserAction === true){
         $pag.one('click.gallerize' , function (){ self.gallery.animation = self.gallery.stopSlideShow(); });
       }
 
@@ -250,11 +250,13 @@ var Paginator = function (obj) {
   };
   
   Paginator.prototype.moveDefaultPaginatorRight = function () {
-    return this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide + this.maxVisibleThumbs);
+    this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide + this.maxVisibleThumbs);
+    return this.currentPaginatorSlide;
   };
 
   Paginator.prototype.moveDefaultPaginatorLeft = function () {
-    return this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide - this.maxVisibleThumbs);
+    this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide - this.maxVisibleThumbs);
+    return this.currentPaginatorSlide;
   };
   
 };
