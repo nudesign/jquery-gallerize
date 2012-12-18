@@ -22,7 +22,7 @@
     <script type="text/javascript" charset="utf-8" src="../src/jquery-gallerize.js"></script>
     <script type="text/javascript" charset="utf-8">
       $(document).ready(function () {
-        $(".gallery_two").gallerize("init");
+        $(".gallery_two").gallerize("init", { before: function () { console.log("b") } });
         $(".gallery_one").gallerize("init");
 
       });

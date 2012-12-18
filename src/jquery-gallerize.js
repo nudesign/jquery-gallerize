@@ -5,6 +5,9 @@
 */
 
 (function($){
+
+var galleries = []; // object to store intiated galleries
+
 var Gallery = function (element, options) {
   
   this.settings = options;
@@ -13,22 +16,22 @@ var Gallery = function (element, options) {
   this.animation = undefined; //animation of slideShow
   this.$children = this.$gallery.children(this.settings.items);
   this.currentSlide = 0;
-  this.gallery_window = $("<div class='gallery_window' />");
+  this.gallery_window = $("<div class='gallery_window'/>");
   this.increment = this.$gallery.width();
-  this.isAnimating = undefined;   
   this.maxHeight = undefined;
   this.effect = undefined;
   if (this.settings.items === "") { this.settings.items = this.$children.get(0).tagName.toLowerCase(); }
-  this.gallery_window.css("width", this.increment);
+  this.gallery_window.css({"width": this.increment, "overflow": "hidden"});
   this.$gallery.wrap(this.gallery_window);
   this.paginator = undefined;
   
   /* STARTUP METHODS */
   Gallery.prototype.init = function () {
     var self = this;
+    if (typeof this.settings.before === "function") {
+      this.settings.before();
+    }
     this.setupGallery();
-    //privateMethods.setupPaginator.call($gallery);
-    //privateMethods.bindListeners.call($gallery);
     if (this.settings.paginator === true) {
       this.paginator = new Paginator(this);
       this.paginator.init();
@@ -93,8 +96,6 @@ var Gallery = function (element, options) {
   /*--------------------------------*/
   /* MOVE METHODS */
    Gallery.prototype.moveToSlide = function (index) {
-      var $this = $(this);
-      index = parseInt(index, 10);
 
       if (index >= this.$children.length) {
         index = 0;
@@ -116,7 +117,11 @@ var Gallery = function (element, options) {
     var $this = $(this);
 
     this.currentSlide = this.moveToSlide(--this.currentSlide);
-    //this.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, this.currentSlide);
+
+    if (this.settings.paginator === true) {
+      this.paginator.currentPaginatorSlide = paginator.movePaginatorToSlide(this.currentSlide);
+    }
+
     return this.currentSlide;
   };
 
@@ -124,7 +129,11 @@ var Gallery = function (element, options) {
     var $this = $(this);
     
     this.currentSlide = this.moveToSlide(++this.currentSlide);
-    //this.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, this.currentSlide);
+    
+    if (this.settings.paginator === true) {
+      this.paginator.currentPaginatorSlide = paginator.movePaginatorToSlide(this.currentSlide);
+    }
+    
     return this.currentSlide;
   };
   /*----------------------------------------------------*/
@@ -147,18 +156,15 @@ var Gallery = function (element, options) {
       $(this.gallery).stop(true, false).animate({'margin-left': newLeft}, parseInt(this.settings.transition_duration, 10));
     };
     /*-------------------------------------------------------*/
+    
     Gallery.prototype.stopSlideShow = function() {
       var $this = $(this);
-      this.isAnimating = false;
       clearInterval(this.animation);
       return this.animation;
     };
 
     Gallery.prototype.startSlideShow = function (timeout) {
       var self = this;
-      if (this.isAnimating === true) {
-        this.stopSlideShow();
-      }
       return setInterval(function () {
         self.currentSlide = self.moveToSlide(++self.currentSlide);
         //this.currentPaginatorSlide = privateMethods.movePaginatorToSlide(this.currentSlide);
@@ -188,7 +194,7 @@ var Paginator = function (obj) {
       this.gallery.$children.each(function (i, el) {
         var $el = $(el);
         $el.data('index', i);
-        if ($el.data('thumb_src') != undefined) {
+        if ($el.data('thumb_src') !== undefined) {
           $pag.append("<li data-index='" + i + "'><img src='" + $(el).data('thumb_src') + "'></li>");
         }
       });
@@ -214,12 +220,18 @@ var Paginator = function (obj) {
 
       this.$paginator = $pag;
       
-      this.$paginator_left = $("<a href='javascript://' class='paginatorLeft' />");
+      this.$paginator_left = $("<a href='javascript://' class='arrow paginatorLeft' />");
 
-      this.$paginator_right = $("<a href='javascript://' class='paginatorRight' />");
+      this.$paginator_right = $("<a href='javascript://' class='arrow paginatorRight' />");
 
       $(".gallery_window").css('position', 'relative');
-      this.$paginator.append(this.$paginator_left).append(this.$paginator_right);
+      $(this.gallery.element).after(this.$paginator_left).after(this.$paginator_right);
+      
+      this.$paginator_left = $(this.gallery.element).siblings(".paginatorLeft");
+      this.$paginator_right = $(this.gallery.element).siblings(".paginatorRight");
+      
+      this.$paginator_left.on('click.gallerize', function ()    { self.moveDefaultPaginatorLeft();  });
+      this.$paginator_right.on('click.gallerize', function ()   { self.moveDefaultPaginatorRight(); });
 
       this.$paginator.css('margin-left', this.$paginator_left.outerWidth(true));
       this.maxVisibleThumbs = (this.gallery.increment - (2 * this.$paginator_left.outerWidth(true))) / this.paginator_increment;
@@ -233,54 +245,20 @@ var Paginator = function (obj) {
     else if (index <= 0){
       index = 0;
     }
-    this.$paginator.stop(true).animate({'margin-left': -((index * this.paginator_increment) - this.$paginator_left.outerWidth(true) )}, this.gallery.settings.transition_duration);
+    this.$paginator.stop(true).animate({'margin-left': -((index * this.paginator_increment) - this.$paginator_left.outerWidth(true) )}, (this.gallery.settings.transition_duration /2) );
     return index;
+  };
+  
+  Paginator.prototype.moveDefaultPaginatorRight = function () {
+    return this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide + this.maxVisibleThumbs);
+  };
+
+  Paginator.prototype.moveDefaultPaginatorLeft = function () {
+    return this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide - this.maxVisibleThumbs);
   };
   
 };
 
-var privateMethods = {
-    movePaginatorRight: function () {
-      var $this = $(this),
-          data = $this.data("gallerize");
-      return data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, data.currentPaginatorSlide + data.maxVisibleThumbs);
-    },
-
-    movePaginatorLeft: function () {
-      var $this = $(this),
-          data = $this.data("gallerize");
-      return data.currentPaginatorSlide = privateMethods.movePaginatorToSlide.call(this, data.currentPaginatorSlide - data.maxVisibleThumbs );
-    },
-    
-    bindListeners: function () {
-      return $(this).each(function(){
-        var self = this,
-            $this = $(this),
-            data = $this.data("gallerize");
-        
-        if (settings.next_button !== false) {
-          $this.parents('.gallery_window').find(settings.next_button).on('click.gallerize', function () {
-            methods.moveRight.call($(self));
-          });
-        }
-        if (settings.prev_button !== false) {
-          $this.parents('.gallery_window').find(settings.prev_button).on('click.gallerize', function () {
-            methods.moveLeft.call($(self));
-          });
-        }
-        $(document).on('keyup.gallerize', function (e) {
-          if (e.keyCode === 37) { methods.moveLeft.call($(self)); }
-          if (e.keyCode === 39) { methods.moveRight.call($(self)); }
-        });
-
-        data.$paginator_left.on('click.gallerize', function ()    { privateMethods.movePaginatorLeft.call($(self));  });
-        data.$paginator_right.on('click.gallerize', function ()   { privateMethods.movePaginatorRight.call($(self)); });
-
-      });
-    }
-    
-};
-  
 var settings = {
     timeout: 4000,
     transition_duration: 2000,
@@ -296,8 +274,19 @@ var settings = {
 };  
 
 $.fn.gallerize = function(method, options) {
-  this.gallery = [];
   options = options || {};
+  var id;
+
+//CHECK IF GALLERY HAS ID
+  if (!$(this).attr("id")) {
+    $.error("gallery must have an id");
+    return false;
+  }
+  else {
+    id = $(this).attr("id");
+  }
+//------------------------------------
+
   if (method && typeof method == 'object') {
     options = method;
     $.extend(options, settings);
@@ -307,37 +296,44 @@ $.fn.gallerize = function(method, options) {
   }
 
   if (method === 'init') {
-    if (!this.gallery[$(this).attr("id")]) {
-      this.gallery[$(this).attr("id")] = new Gallery(this, options);
+    if (!galleries[id]) {
+      galleries[id] = new Gallery(this, options);
     }
-    this.gallery[$(this).attr("id")].init();
+    return galleries[id].init();
+  }
+  
+  else if ( method === 'startSlideShow') {
+      if ( typeof options === 'number' ) {
+        settings.timeout = options;
+        return galleries[id].animation = galleries[id].startSlideShow(settings.timeout);
+      }
+      else {
+        $.error("invalid input for startSlideShow")
+      }
   }
 
-  // if ( methods[method] ) {
-  //   if ( method === 'startSlideShow') {
-  //     if ( typeof options === 'number' ) {
-  //       settings.timeout = options;
-  //       return data.animation = methods.startSlideShow.call(this, options);
-  //     }
-  //     else {
-  //       $.error("startSlideShow input inválido")
-  //     }
-  //   }
-  //   else if ( method === 'moveToSlide' ) {
-  //     if ( typeof options === "number" ) { 
-  //       return methods.moveToSlide.call(this, options);
-  //     }
-  //     else {
-  //       $.error("moveToSlide input inválido")
-  //     }
-  //   }
-  //   else {
-  //     return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
-  //   }
-  // } else if ( typeof method === 'object' || ! method ) {
-  //     return methods.init.apply( this, arguments );
-  // } else {
-  //     $.error( 'Method ' +  method + ' does not exist on jQuery.gallerize' );
-  // }    
+  else if ( method === 'stopSlideShow') {
+    return  galleries[id].stopSlideShow();
+  }
+
+  else if ( method === 'moveToSlide' ) {
+    if ( typeof options === "number" ) { 
+      return galleries[id].moveToSlide(options);
+   }
+    else {
+      $.error("invalid input for moveToSlide")
+    }
+  }
+ 
+  else if ( typeof method === 'object' || !method ) {
+    if (!galleries[id]) {
+      tgalleries[id] = new Gallery(this, options);
+    }
+    return galleries[id].init();
+  }
+  else {
+    $.error( 'Method ' +  method + ' does not exist on jQuery.gallerize' );
+  }
+
 };
 })( jQuery );
