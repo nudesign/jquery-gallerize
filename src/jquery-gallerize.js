@@ -9,11 +9,12 @@
 var galleries = []; // object to store intiated galleries
 
 var Gallery = function (element, options) {
-  
+
   this.settings = options;
   this.element = element;
   this.$gallery = $(element);
   this.animation = undefined; //animation of slideShow
+  this.animate = undefined;
   this.$children = this.$gallery.children(this.settings.items);
   this.currentSlide = 0;
   this.gallery_window = $("<div class='gallery_window'/>");
@@ -21,50 +22,62 @@ var Gallery = function (element, options) {
   this.maxHeight = undefined;
   this.effect = undefined;
   if (this.settings.items === "") { this.settings.items = this.$children.get(0).tagName.toLowerCase(); }
-  this.gallery_window.css({"width": this.increment, "overflow": "hidden"});
+
+  this.gallery_window.css({"width": this.increment, "overflow": "hidden", "position": "relative"});
+    
   this.$gallery.wrap(this.gallery_window);
+  this.gallery_window = this.$gallery.parent();
   this.paginator = undefined;
   
   /* STARTUP METHODS */
   Gallery.prototype.init = function () {
     var self = this;
+    
     if (typeof this.settings.before === "function") {
       this.settings.before();
     }
-    this.setupGallery();
+
+    $(window).load(function () {
+      self.maxHeight = self.getMaxHeight();
+      self.setupGallery();
+      self.$gallery.css('height', self.maxHeight);
+      if (self.settings.autostart === true) {
+        self.animation = self.startSlideShow(self.settings.timeout);
+      }
+    });
+    
+    if (!this.maxHeight) {
+      this.maxHeight = this.getMaxHeight();
+      this.setupGallery();
+      this.$gallery.css('height', this.maxHeight);
+      if (this.settings.autostart === true) {
+        this.animation = this.startSlideShow(this.settings.timeout);
+      }
+    }
+
     if (this.settings.paginator === true) {
       this.paginator = new Paginator(this);
       this.paginator.init();
     }
-    
-    $(window).load(function () {
-      self.maxHeight = self.getMaxHeight();
-      self.$gallery.css('height', self.maxHeight);
-    });
-
-    if (this.settings.autostart === true) {
-      this.animation = this.startSlideShow(this.settings.timeout);
-    }
-    
   };
   
   Gallery.prototype.setupGallery = function () {
-      var $this = $(this),
-          index;
+      var index;
+      if (!this.maxHeight) {
+        return false;
+      }
       switch ( this.settings.transitionFx )
       {
         case 'noFx':
           this.effect = this.noFx;
         case 'fade':
-          $this.css({'overflow': 'hidden', 'width': this.increment});
+          this.$gallery.css({'overflow': 'hidden', 'width': this.increment});
           this.$children.css({'display': 'none', 'float': 'left', 'width' : this.increment});
-          if (!this.effect) {
-            this.effect = this.fade;
-          }
+          this.effect = this.fade;
           this.currentSlide = this.moveToSlide(0);
           break;
         case 'crossFade':
-          $this.css({'overflow': 'hidden', 'width': this.increment});
+          this.$gallery.css({'overflow': 'hidden', 'width': this.increment});
           this.$children.css({'display': 'none', 'position': 'absolute', 'width' : this.increment});
           this.effect = this.crossFade;
           this.currentSlide = this.moveToSlide(0);
@@ -74,7 +87,7 @@ var Gallery = function (element, options) {
           }          
           break;
         case 'slide':
-          $this.css('width', this.$children.length * this.increment);
+          this.$gallery.css('width', this.$children.length * this.increment);
           this.$children.css({'float': 'left', 'width': this.increment});
           this.effect = this.slide;     
           this.currentSlide = this.moveToSlide(0);
@@ -86,17 +99,26 @@ var Gallery = function (element, options) {
   };
   
   Gallery.prototype.getMaxHeight = function () {
-    var max = 0,
-        $this = $(this);
-    this.$children.each(function (i, el) {
-      max = Math.max(max, parseInt($(el).height(), 10));
+    var max = 0;
+    this.$children.find("img").each(function () {
+      var $this = $(this),
+          that = $this;
+      $this.data('dimensions', {
+        data_height: that.height(),
+        data_width: that.width()
+      });
+      max = Math.max(max, parseInt($this.height(), 10));
     });
     return max;
   };
   /*--------------------------------*/
   /* MOVE METHODS */
    Gallery.prototype.moveToSlide = function (index) {
-
+      if ( this.animate === true
+        && this.settings.stopAfterUserAction === true) {
+        this.stopSlideShow();
+      }
+      
       if (index >= this.$children.length) {
         index = 0;
       }
@@ -119,7 +141,7 @@ var Gallery = function (element, options) {
     this.currentSlide = this.moveToSlide(--this.currentSlide);
 
     if (this.settings.paginator === true) {
-      this.paginator.currentPaginatorSlide = paginator.movePaginatorToSlide(this.currentSlide);
+      this.paginator.currentPaginatorSlide = this.paginator.moveDefaultPaginatorToSlide(this.currentSlide);
     }
 
     return this.currentSlide;
@@ -129,9 +151,8 @@ var Gallery = function (element, options) {
     var $this = $(this);
     
     this.currentSlide = this.moveToSlide(++this.currentSlide);
-    
     if (this.settings.paginator === true) {
-      this.paginator.currentPaginatorSlide = paginator.movePaginatorToSlide(this.currentSlide);
+      this.paginator.currentPaginatorSlide = this.paginator.moveDefaultPaginatorToSlide(this.currentSlide);
     }
     
     return this.currentSlide;
@@ -157,21 +178,32 @@ var Gallery = function (element, options) {
     };
     /*-------------------------------------------------------*/
     
-    Gallery.prototype.stopSlideShow = function() {
+    Gallery.prototype.stopSlideShow = function () {
       var $this = $(this);
+      
+      if (this.animate === true) {
+        this.animate = false;
+      } 
+      else {
+        return false;
+      }
+      
       clearInterval(this.animation);
       return this.animation;
     };
 
     Gallery.prototype.startSlideShow = function (timeout) {
       var self = this;
+      if (this.settings.autostart === true) {
+        this.animate = true;
+      }
       return setInterval(function () {
         self.currentSlide = self.moveToSlide(++self.currentSlide);
         //this.currentPaginatorSlide = privateMethods.movePaginatorToSlide(this.currentSlide);
       }, self.settings.timeout);
     };
 };
-
+//////////////////////////////////////////////////////////////PAGINATOR ////////////////////////////////////////////////////////////////
 var Paginator = function (obj) { 
   this.gallery = obj;
   this.$paginator = undefined;
@@ -190,12 +222,12 @@ var Paginator = function (obj) {
       var $pag = $("<ul class='paginator' />"),
           $this = $(this),
           self = this;
-                
+      $pag.css("float", "left");
       this.gallery.$children.each(function (i, el) {
         var $el = $(el);
         $el.data('index', i);
         if ($el.data('thumb_src') !== undefined) {
-          $pag.append("<li data-index='" + i + "'><img src='" + $(el).data('thumb_src') + "'></li>");
+          $pag.append("<li data-index='" + i + "' style='display: inline; float: left;'><img src='" + $(el).data('thumb_src') + "' style='float: left;'></li>");
         }
       });
 
@@ -206,39 +238,45 @@ var Paginator = function (obj) {
         self.currentPaginatorSlide = self.moveDefaultPaginatorToSlide($li.data('index'));
         e.preventDefault();
       });
-      
-      if (this.gallery.settings.stopAfterUserAction === true){
-        $pag.one('click.gallerize' , function (){ self.gallery.animation = self.gallery.stopSlideShow(); });
-      }
 
       this.gallery.$children.parents('.gallery_window').append($pag);
       
-      this.$paginator_children = $pag.children();
-      this.paginator_increment = this.$paginator_children.outerWidth(true);
+      this.$paginator_children = $pag.children("li");
       
-      $pag.css('width' , this.$paginator_children.length * this.paginator_increment);
-
       this.$paginator = $pag;
       
+      if (self.gallery.settings.full_screen === true ) {
+        
+        this.$paginator.css({"position": "fixed", "bottom": 0, "z-index": 201});
+      }
+      
       this.$paginator_left = $("<a href='javascript://' class='arrow paginatorLeft' />");
-
+      
       this.$paginator_right = $("<a href='javascript://' class='arrow paginatorRight' />");
-
-      $(".gallery_window").css('position', 'relative');
-      $(this.gallery.element).after(this.$paginator_left).after(this.$paginator_right);
       
-      this.$paginator_left = $(this.gallery.element).siblings(".paginatorLeft");
-      this.$paginator_right = $(this.gallery.element).siblings(".paginatorRight");
+      this.$paginator.append(this.$paginator_left).append(this.$paginator_right);
       
-      this.$paginator_left.on('click.gallerize', function ()    { self.moveDefaultPaginatorLeft();  });
+      this.$paginator_left = this.$paginator.find(".paginatorLeft");
+      this.$paginator_right = this.$paginator.find(".paginatorRight");
+      
+      this.$paginator_left.on('click.gallerize', function ()    { self.moveDefaultPaginatorLeft(); });
       this.$paginator_right.on('click.gallerize', function ()   { self.moveDefaultPaginatorRight(); });
-
       this.$paginator.css('margin-left', this.$paginator_left.outerWidth(true));
-      this.maxVisibleThumbs = (this.gallery.increment - (2 * this.$paginator_left.outerWidth(true))) / this.paginator_increment;
-      this.maxVisibleThumbs = Math.floor(this.maxVisibleThumbs);
+      
+      $(window).load(function () {
+        self.paginator_increment = self.$paginator_children.outerWidth(true);
+        $pag.css('width' , self.$paginator_children.length * self.paginator_increment);
+        self.maxVisibleThumbs = (self.gallery.increment - (2 * self.$paginator_left.outerWidth(true))) / self.paginator_increment;
+        self.maxVisibleThumbs = Math.floor(self.maxVisibleThumbs);
+      });
   };
   Paginator.prototype.moveDefaultPaginatorToSlide = function (index) {
     var $this = $(this);
+    
+    if (this.$paginator_children.length < this.maxVisibleThumbs) {
+      return false;
+    }
+    
     if (index >= this.$paginator_children.length - this.maxVisibleThumbs) {
       index = ( this.$paginator_children.length - this.maxVisibleThumbs );
     }
@@ -267,12 +305,13 @@ var settings = {
     transitionFx: 'crossFade',
     autostart: true,
     stopAfterUserAction: true,
-    items: "", // children itens selector
+    items: "", // children items selector
     next_button: false, // must be a child of the original gallery element
     prev_button: false, // must be a child of the original gallery element
     active_slide_class: "active",
     active_paginator_class: "active",
-    paginator: true
+    paginator: true,
+    full_screen: false
 };  
 
 $.fn.gallerize = function(method, options) {
@@ -291,17 +330,20 @@ $.fn.gallerize = function(method, options) {
 
   if (method && typeof method == 'object') {
     options = method;
-    $.extend(options, settings);
+    $.extend(settings, options);
   }
   else if(options && typeof options == 'object'){
-    $.extend(options, settings);
+    $.extend(settings, options);
   }
 
   if (method === 'init') {
     if (!galleries[id]) {
-      galleries[id] = new Gallery(this, options);
+      galleries[id] = new Gallery(this, settings);
+      galleries[id].init();
     }
-    return galleries[id].init();
+    else {
+      $.error("this gallery have already been initiated")
+    }
   }
   
   else if ( method === 'startSlideShow') {
@@ -327,9 +369,15 @@ $.fn.gallerize = function(method, options) {
     }
   }
  
+ else if (method === 'moveLeft') {
+   return galleries[id].moveLeft();
+ }
+ else if (method === 'moveRight') {
+   return galleries[id].moveRight();
+ }
   else if ( typeof method === 'object' || !method ) {
     if (!galleries[id]) {
-      tgalleries[id] = new Gallery(this, options);
+      tgalleries[id] = new Gallery(this, settings);
     }
     return galleries[id].init();
   }
