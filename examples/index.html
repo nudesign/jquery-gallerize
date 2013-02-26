@@ -4,10 +4,37 @@
     <style type="text/css" media="screen">
       body { background: #FFFFFF; color: #000; font-family: Helvetica, Arial, Verdana; font-size: 12px; line-height: 15px; }
       img { max-width: 100%; }
+      .paginator-window {
+        background-color: rgba(0,0,0,0.5);
+        bottom: 0px;
+        cursor: pointer;
+        height: 0px;
+        left:0px;
+        overflow: hidden;
+        padding: 4px 0px;
+        position: absolute;
+        right: 0px;
+        z-index: 200;
+        height: 48px;
+      }
+      
+      .paginator {
+          height: 48px;
+          margin-left: 48px;
+        }
+        .paginator .paginator-item {
+          display: inline;
+          float: left;
+        }
+        .paginator img {
+          height: 48px;
+          margin-right: 4px;
+        }
+      .gallery-window { position: relative; float:left; overflow: hidden; }
       .floated { display: inline; float: left; margin: 25px; }
-      ul.gallery_one { width: 500px; margin: 0; padding: 0; }
+      ul.gallery_one { width: 500px; height: 500px; margin: 0; padding: 0; }
         ul.gallery_one li { margin: 0; padding: 0; }
-      ul.gallery_two { width: 500px; margin: 0; padding: 0; }
+      ul.gallery_two { width: 500px; height: 500px; margin: 0; padding: 0; }
         ul.gallery_two li { margin: 0; padding: 0; }
       li { display: block; }
       .paginator { list-style: none; margin: 0; padding: 0; }
@@ -15,15 +42,15 @@
         
       .forward { width: 20px; height: 100%; z-index: 2; position: absolute; right: 0px; border-left: 2px solid #FFF; background: url('../images/ico-thumbs_arrow-right.png') no-repeat right top; }
         
-      .paginatorLeft { background: #000; position: absolute; bottom: 0px; left: 0px; width: 50px; height: 30px; }
-      .paginatorRight { background: #000; position: absolute; bottom: 0px; right: 0px; width: 50px; height: 30px; }
+      .left-arrow { background: #000; position: absolute; bottom: 0px; left: 0px; width: 50px; height: 30px; }
+      .right-arrow { background: #000; position: absolute; bottom: 0px; right: 0px; width: 50px; height: 30px; }
     </style>
     <script type="text/javascript" charset="utf-8" src="js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="../src/jquery-gallerize.js"></script>
     <script type="text/javascript" charset="utf-8">
       $(document).ready(function () {
         $(".gallery_two").gallerize("init", { before: function () { console.log("b") } });
-        $(".gallery_one").gallerize("init");
+        $(".gallery_one").gallerize("init", { transitionFx: "slide", });
 
       });
     </script>

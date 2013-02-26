@@ -9,221 +9,210 @@
 var galleries = []; // object to store intiated galleries
 
 var Gallery = function (element, options) {
-
-  this.settings = options;
-  this.element = element;
-  this.$gallery = $(element);
+  var self = this,
+      currentSlide = 0,
+      settings = options,
+      $gallery = $(element),
+      $children = $gallery.children(settings.items),
+      children_length = $children.length,
+      gallery_window = $("<div class='gallery-window'/>"),
+      increment = $gallery.width(),
+      animate,
+      effect,
+      paginator;
   this.animation = undefined; //animation of slideShow
-  this.animate = undefined;
-  this.$children = this.$gallery.children(this.settings.items);
-  this.currentSlide = 0;
-  this.gallery_window = $("<div class='gallery_window'/>");
-  this.increment = this.$gallery.width();
-  this.maxHeight = undefined;
-  this.effect = undefined;
-  if (this.settings.items === "") { this.settings.items = this.$children.get(0).tagName.toLowerCase(); }
-
-  this.gallery_window.css({"width": this.increment, "overflow": "hidden", "position": "relative"});
-    
-  this.$gallery.wrap(this.gallery_window);
-  this.gallery_window = this.$gallery.parent();
-  this.paginator = undefined;
+  if (settings.items === "") { settings.items = $children.get(0).tagName.toLowerCase(); }
+  
+  $gallery.css("float", "left");
+  gallery_window.css({"position": "relative", "overflow": "hidden"});
+  $gallery.wrap(gallery_window);
+  gallery_window = $gallery.parent();
   
   /* STARTUP METHODS */
   Gallery.prototype.init = function () {
-    var self = this;
     
-    if (typeof this.settings.before === "function") {
-      this.settings.before();
+    if (typeof settings.before === "function") {
+      settings.before();
+    }
+    
+    setupGallery();
+    if (settings.autostart === true && children_length > 1) {
+      this.animation = this.startSlideShow(settings.timeout);
     }
 
-    $(window).load(function () {
-      self.maxHeight = self.getMaxHeight();
-      self.setupGallery();
-      self.$gallery.css('height', self.maxHeight);
-      if (self.settings.autostart === true) {
-        self.animation = self.startSlideShow(self.settings.timeout);
-      }
-    });
-    
-    if (!this.maxHeight) {
-      this.maxHeight = this.getMaxHeight();
-      this.setupGallery();
-      this.$gallery.css('height', this.maxHeight);
-      if (this.settings.autostart === true) {
-        this.animation = this.startSlideShow(this.settings.timeout);
-      }
+    if (settings.paginator === true) {
+      paginator = new Paginator(this);
     }
-
-    if (this.settings.paginator === true) {
-      this.paginator = new Paginator(this);
-      this.paginator.init();
+    if (typeof settings.after === "function") {
+      settings.after();
     }
   };
   
-  Gallery.prototype.setupGallery = function () {
+  function setupGallery () {
       var index;
-      if (!this.maxHeight) {
-        return false;
-      }
-      switch ( this.settings.transitionFx )
+      switch ( settings.transitionFx )
       {
         case 'noFx':
-          this.effect = this.noFx;
+          $children.css({'display': 'none', 'float': 'left'});
+          effect = noFx;
+          currentSlide = self.moveToSlide(0);
+          break;
         case 'fade':
-          this.$gallery.css({'overflow': 'hidden', 'width': this.increment});
-          this.$children.css({'display': 'none', 'float': 'left', 'width' : this.increment});
-          this.effect = this.fade;
-          this.currentSlide = this.moveToSlide(0);
+          $children.css({'display': 'none', 'float': 'left'});
+          effect = fade;
+          currentSlide = self.moveToSlide(0);
           break;
         case 'crossFade':
-          this.$gallery.css({'overflow': 'hidden', 'width': this.increment});
-          this.$children.css({'display': 'none', 'position': 'absolute', 'width' : this.increment});
-          this.effect = this.crossFade;
-          this.currentSlide = this.moveToSlide(0);
-          index = this.$children.length;          
+          $children.css({'display': 'none', 'position': 'absolute'});
+          effect = crossFade;
+          currentSlide = self.moveToSlide(0);
+          index = children_length;          
           while (index--) {
-            $(this.$children.get(index)).css("z-index", index);
+            $($children.get(index)).css("z-index", index);
           }          
           break;
         case 'slide':
-          this.$gallery.css('width', this.$children.length * this.increment);
-          this.$children.css({'float': 'left', 'width': this.increment});
-          this.effect = this.slide;     
-          this.currentSlide = this.moveToSlide(0);
+          gallery_window.css({"width": increment, "overflow": "hidden", "position": "relative"});
+          $gallery.css('width', children_length * increment + "px");
+          $children.css({'float': 'left', 'width': increment});
+          effect = slide;     
+          currentSlide = self.moveToSlide(0);
           break;
         default:
-          $.error( this.settings.transitionFx + ' não é um efeito valido!<br>');
+          $.error( settings.transitionFx + ' não é um efeito valido!<br>');
           break;
-      }
+      }      
   };
   
-  Gallery.prototype.getMaxHeight = function () {
+  function getMaxHeight () {
     var max = 0;
-    this.$children.find("img").each(function () {
+    $children.find("img").each(function () {
       var $this = $(this),
-          that = $this;
-      $this.data('dimensions', {
-        data_height: that.height(),
-        data_width: that.width()
-      });
+          that = $this,
+          height = $this.height || $this.parent() 
       max = Math.max(max, parseInt($this.height(), 10));
     });
     return max;
   };
   /*--------------------------------*/
   /* MOVE METHODS */
-   Gallery.prototype.moveToSlide = function (index) {
-      if ( this.animate === true
-        && this.settings.stopAfterUserAction === true) {
-        this.stopSlideShow();
-      }
-      
-      if (index >= this.$children.length) {
+   this.moveToSlide = function (index) {
+      if (index >= children_length) {
         index = 0;
       }
       else if (index < 0) {
-        index = (this.$children.length - 1);
+        index = (children_length - 1);
       }
-      $(this.$children.removeClass(this.settings.active_slide_class)[index]).addClass(this.settings.active_slide_class);
-
-      if (this.$paginator_children !== undefined) {
-        $(this.$paginator_children.removeClass(this.settings.active_paginator_class)[index]).addClass(this.settings.active_paginator_class);
-      }
-      this.effect(index);
-      this.currentSlide = index;
+      $($children.removeClass(settings.active_slide_class)[index]).addClass(settings.active_slide_class);
+      effect(index);
+      currentSlide = index;
     
       return index; 
   };
   Gallery.prototype.moveLeft = function () {
     var $this = $(this);
-
-    this.currentSlide = this.moveToSlide(--this.currentSlide);
-
-    if (this.settings.paginator === true) {
-      this.paginator.currentPaginatorSlide = this.paginator.moveDefaultPaginatorToSlide(this.currentSlide);
+    if ( this.animate === true
+      && settings.stopAfterUserAction === true) {
+      this.stopSlideShow();
     }
 
-    return this.currentSlide;
+    currentSlide = this.moveToSlide(--currentSlide);
+
+    if (settings.paginator === true) {
+      paginator.moveDefaultPaginatorToSlide(currentSlide);
+    }
+
+    return currentSlide;
   };
 
   Gallery.prototype.moveRight = function () {
     var $this = $(this);
-    
-    this.currentSlide = this.moveToSlide(++this.currentSlide);
-    if (this.settings.paginator === true) {
-      this.paginator.currentPaginatorSlide = this.paginator.moveDefaultPaginatorToSlide(this.currentSlide);
+    if ( animate === true
+      && settings.stopAfterUserAction === true) {
+      this.stopSlideShow();
     }
     
-    return this.currentSlide;
+    currentSlide = this.moveToSlide(++currentSlide);
+    if (settings.paginator === true) {
+      paginator.moveDefaultPaginatorToSlide(currentSlide);
+    }
+    
+    return currentSlide;
   };
   /*----------------------------------------------------*/
   
   /* ANIMATION EFFECTS */
-    Gallery.prototype.noFx = function () {
-      this.$children.css('display', 'none');
-      this.$children.filter('.active').css('display', 'block');
+    function noFx () {
+      $children.css('display', 'none');
+      $children.filter('.active').css('display', 'block');
     };
-    Gallery.prototype.fade = function () {
-      this.$children.stop(true).fadeOut(parseInt(this.settings.transition_duration / 2, 10));
-      this.$children.filter('.active').delay(parseInt(this.settings.transition_duration / 2, 10)).fadeIn(parseInt(this.settings.transition_duration / 2, 10));
+    function fade () {
+      $children.stop(true).fadeOut(parseInt(settings.transition_duration / 2, 10));
+      $children.filter('.active').delay(parseInt(settings.transition_duration / 2, 10)).fadeIn(parseInt(settings.transition_duration / 2, 10));
     };
-    Gallery.prototype.crossFade = function () {
-      this.$children.stop(true).fadeOut(parseInt(this.settings.transition_duration / 2, 10));
-      this.$children.filter('.active').fadeIn(parseInt(this.settings.transition_duration / 2, 10));
+    function crossFade () {
+      $children.stop(true).fadeOut(parseInt(settings.transition_duration / 2, 10));
+      $children.filter('.active').fadeIn(parseInt(settings.transition_duration / 2, 10));
     };
-    Gallery.prototype.slide = function (index) {
-      var newLeft = -(index * this.increment);       
-      $(this.gallery).stop(true, false).animate({'margin-left': newLeft}, parseInt(this.settings.transition_duration, 10));
+    function slide (index) {
+      var newLeft = -(index * increment);       
+      $gallery.stop(true, false).animate({'margin-left': newLeft}, parseInt(settings.transition_duration, 10));
     };
     /*-------------------------------------------------------*/
     
     Gallery.prototype.stopSlideShow = function () {
       var $this = $(this);
       
-      if (this.animate === true) {
-        this.animate = false;
+      if (animate === true) {
+        animate = false;
       } 
       else {
         return false;
       }
-      
       clearInterval(this.animation);
       return this.animation;
     };
 
     Gallery.prototype.startSlideShow = function (timeout) {
-      var self = this;
-      if (this.settings.autostart === true) {
-        this.animate = true;
+      if (settings.autostart === true) {
+        animate = true;
       }
       return setInterval(function () {
-        self.currentSlide = self.moveToSlide(++self.currentSlide);
-        //this.currentPaginatorSlide = privateMethods.movePaginatorToSlide(this.currentSlide);
-      }, self.settings.timeout);
+        self.moveToSlide(++currentSlide);
+      }, settings.timeout);
     };
+    
+    return $.extend({
+      $gallery: $gallery,
+      $children: $children,
+      settings: settings,
+      increment: increment,
+    }, this);
+     
 };
 //////////////////////////////////////////////////////////////PAGINATOR ////////////////////////////////////////////////////////////////
-var Paginator = function (obj) { 
-  this.gallery = obj;
-  this.$paginator = undefined;
-  this.paginator_children = undefined;
-  this.paginator_increment = undefined;
-  this.$paginator_left = undefined;
-  this.$paginator_right = undefined;
-  this.maxVisibleThumbs = undefined;
+var Paginator = function (gallery) { 
+  var self = this,
+      $gallery = gallery.$gallery,
+      $paginator,
+      $paginator_children,
+      paginator_children_length,
+      paginator_increment,
+      $paginator_left_arrow,
+      $paginator_right_arrow,
+      paginator_arrow_width,
+      maxVisibleThumbs;
   this.currentPaginatorSlide = 0;
-  
   Paginator.prototype.init = function () {
-    this.setupDefaultPaginator();
+    setupDefaultPaginator();
   };
   
-  Paginator.prototype.setupDefaultPaginator = function () {
-      var $pag = $("<ul class='paginator' />"),
-          $this = $(this),
-          self = this;
-      $pag.css("float", "left");
-      this.gallery.$children.each(function (i, el) {
+  function setupDefaultPaginator() {
+      var $pag_window = $("<div class='paginator-window'/>"),
+          $pag = $("<ul class='paginator' />"),
+          $this = $(self);
+      $pag.css({"min-width": gallery.$children.parents('.gallery-window').width() - (2 * $(".arrow").width())});
+      gallery.$children.each(function (i, el) {
         var $el = $(el);
         $el.data('index', i);
         if ($el.data('thumb_src') !== undefined) {
@@ -231,75 +220,78 @@ var Paginator = function (obj) {
         }
       });
 
-      $pag.on('click.gallerize', function (e) {
-        var $li = $(e.target).parents(self.gallery.settings.items);
+      gallery.$children.parents('.gallery-window').append($pag);
+      $pag.wrap($pag_window);
+      $pag_window = $gallery.siblings();
+      
+      $paginator = $pag_window.children();
+      $paginator_children = $pag.children("li");
+      paginator_children_length = $paginator_children.length;
+      $paginator.on('click.gallerize', function (e) {
+        var $li = $(e.target).parents("li");
         if ($li.length !== 1) { return; }
-        self.gallery.currentSlide = self.gallery.moveToSlide($li.data('index'));
+        gallery.stopSlideShow();
+        gallery.currentSlide = gallery.moveToSlide($li.data('index'));
         self.currentPaginatorSlide = self.moveDefaultPaginatorToSlide($li.data('index'));
         e.preventDefault();
       });
-
-      this.gallery.$children.parents('.gallery_window').append($pag);
       
-      this.$paginator_children = $pag.children("li");
+      paginator_left_margin = parseInt($paginator.css("margin-left"), 10);
       
-      this.$paginator = $pag;
+      $paginator_left_arrow = $("<a href='javascript://' class='paginator-arrow arrow left-arrow' />");
       
-      if (self.gallery.settings.full_screen === true ) {
-        
-        this.$paginator.css({"position": "fixed", "bottom": 0, "z-index": 201});
-      }
+      $paginator_right_arrow = $("<a href='javascript://' class='paginator-arrow arrow right-arrow' />");
       
-      this.$paginator_left = $("<a href='javascript://' class='arrow paginatorLeft' />");
+      $pag_window.append($paginator_left_arrow).append($paginator_right_arrow);
       
-      this.$paginator_right = $("<a href='javascript://' class='arrow paginatorRight' />");
+      $paginator_left_arrow = $pag_window.find(".left-arrow");
+      $paginator_right_arrow = $pag_window.find(".right-arrow");
       
-      this.$paginator.append(this.$paginator_left).append(this.$paginator_right);
-      
-      this.$paginator_left = this.$paginator.find(".paginatorLeft");
-      this.$paginator_right = this.$paginator.find(".paginatorRight");
-      
-      this.$paginator_left.on('click.gallerize', function ()    { self.moveDefaultPaginatorLeft(); });
-      this.$paginator_right.on('click.gallerize', function ()   { self.moveDefaultPaginatorRight(); });
-      this.$paginator.css('margin-left', this.$paginator_left.outerWidth(true));
+      $paginator_left_arrow.on('click.gallerize', function ()    { moveDefaultPaginatorLeft(); });
+      $paginator_right_arrow.on('click.gallerize', function ()   { moveDefaultPaginatorRight(); });
+      $paginator.css('margin-left', $paginator_left_arrow.outerWidth(true));
       
       $(window).load(function () {
-        self.paginator_increment = self.$paginator_children.outerWidth(true);
-        $pag.css('width' , self.$paginator_children.length * self.paginator_increment);
-        self.maxVisibleThumbs = (self.gallery.increment - (2 * self.$paginator_left.outerWidth(true))) / self.paginator_increment;
-        self.maxVisibleThumbs = Math.floor(self.maxVisibleThumbs);
+        paginator_arrow_width = $paginator_children.outerWidth(true);
+        paginator_increment = paginator_arrow_width;
+        $pag.css('width' , paginator_children_length * paginator_increment);
+        maxVisibleThumbs = (gallery.increment - (2 * paginator_arrow_width)) / paginator_increment;
+        maxVisibleThumbs = Math.floor(maxVisibleThumbs);
       });
+      if (!maxVisibleThumbs) {
+        paginator_increment = $paginator_children.outerWidth(true);
+        $pag.css('width' , paginator_children_length * paginator_increment);
+        maxVisibleThumbs = (gallery.increment - (2 * paginator_arrow_width)) / paginator_increment;
+        maxVisibleThumbs = Math.floor(maxVisibleThumbs);
+      }
   };
-  Paginator.prototype.moveDefaultPaginatorToSlide = function (index) {
-    var $this = $(this);
-    
-    if (this.$paginator_children.length < this.maxVisibleThumbs) {
+  this.moveDefaultPaginatorToSlide = function (index) {
+    if (paginator_children_length < maxVisibleThumbs) {
       return false;
     }
-    
-    if (index >= this.$paginator_children.length - this.maxVisibleThumbs) {
-      index = ( this.$paginator_children.length - this.maxVisibleThumbs );
+    if (index >= paginator_children_length - maxVisibleThumbs) {
+      index = ( paginator_children_length - maxVisibleThumbs );
     }
     else if (index <= 0){
       index = 0;
     }
-    this.$paginator.stop(true).animate({'margin-left': -((index * this.paginator_increment) - this.$paginator_left.outerWidth(true) )}, (this.gallery.settings.transition_duration /2) );
+    $paginator.stop(true).animate({'margin-left': -((index * paginator_increment ) - paginator_arrow_width )}, (gallery.settings.transition_duration /2) );
     return index;
   };
   
-  Paginator.prototype.moveDefaultPaginatorRight = function () {
-    this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide + this.maxVisibleThumbs);
-    return this.currentPaginatorSlide;
+  function moveDefaultPaginatorRight () {
+    self.currentPaginatorSlide = self.moveDefaultPaginatorToSlide(self.currentPaginatorSlide + maxVisibleThumbs);
+    return self.currentPaginatorSlide;
   };
 
-  Paginator.prototype.moveDefaultPaginatorLeft = function () {
-    this.currentPaginatorSlide = this.moveDefaultPaginatorToSlide(this.currentPaginatorSlide - this.maxVisibleThumbs);
-    return this.currentPaginatorSlide;
+  function moveDefaultPaginatorLeft () {
+    self.currentPaginatorSlide = self.moveDefaultPaginatorToSlide(self.currentPaginatorSlide - maxVisibleThumbs);
+    return self.currentPaginatorSlide;
   };
-  
+  this.init();
 };
 
-var settings = {
+var default_settings = {
     timeout: 4000,
     transition_duration: 2000,
     transitionFx: 'crossFade',
@@ -310,16 +302,22 @@ var settings = {
     prev_button: false, // must be a child of the original gallery element
     active_slide_class: "active",
     active_paginator_class: "active",
-    paginator: true,
-    full_screen: false
+    paginator: true
 };  
 
 $.fn.gallerize = function(method, options) {
   options = options || {};
-  var id;
+  var id,
+      settings;
 
 //CHECK IF GALLERY HAS ID
-  if (!$(this).attr("id")) {
+  if ($(this).length < 1) {
+    if( (window['console'] !== undefined) ){
+      console.log("selector has 0 length");
+    }
+    return;
+  }
+  else if (!$(this).attr("id")) {
     $.error("gallery must have an id");
     return false;
   }
@@ -330,12 +328,11 @@ $.fn.gallerize = function(method, options) {
 
   if (method && typeof method == 'object') {
     options = method;
-    $.extend(settings, options);
+    settings = $.extend( { },default_settings, options);
   }
   else if(options && typeof options == 'object'){
-    $.extend(settings, options);
+   settings = $.extend( { },default_settings, options);
   }
-
   if (method === 'init') {
     if (!galleries[id]) {
       galleries[id] = new Gallery(this, settings);
@@ -377,7 +374,7 @@ $.fn.gallerize = function(method, options) {
  }
   else if ( typeof method === 'object' || !method ) {
     if (!galleries[id]) {
-      tgalleries[id] = new Gallery(this, settings);
+      galleries[id] = new Gallery(this, settings);
     }
     return galleries[id].init();
   }
