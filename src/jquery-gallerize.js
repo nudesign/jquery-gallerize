@@ -7,6 +7,7 @@
 (function($){
 
 var galleries = []; // object to store intiated galleries
+var galleries_index = 0;
 
 var Gallery = function (element, options) {
   var self = this,
@@ -54,17 +55,17 @@ var Gallery = function (element, options) {
       {
         case 'noFx':
           $children.css({'display': 'none', 'float': 'left'});
-          effect = noFx;
+          effect = self.noFx;
           currentSlide = self.moveToSlide(0);
           break;
         case 'fade':
           $children.css({'display': 'none', 'float': 'left'});
-          effect = fade;
+          effect = self.fade;
           currentSlide = self.moveToSlide(0);
           break;
         case 'crossFade':
           $children.css({'display': 'none', 'position': 'absolute'});
-          effect = crossFade;
+          effect = self.crossFade;
           currentSlide = self.moveToSlide(0);
           index = children_length;          
           while (index--) {
@@ -75,7 +76,7 @@ var Gallery = function (element, options) {
           gallery_window.css({"width": increment, "overflow": "hidden", "position": "relative"});
           $gallery.css('width', children_length * increment + "px");
           $children.css({'float': 'left', 'width': increment});
-          effect = slide;     
+          effect = self.slide;     
           currentSlide = self.moveToSlide(0);
           break;
         default:
@@ -106,10 +107,9 @@ var Gallery = function (element, options) {
       $($children.removeClass(settings.active_slide_class)[index]).addClass(settings.active_slide_class);
       effect(index);
       currentSlide = index;
-    
       return index; 
   };
-  Gallery.prototype.moveLeft = function () {
+  this.moveLeft = function () {
     var $this = $(this);
     if ( this.animate === true
       && settings.stopAfterUserAction === true) {
@@ -121,17 +121,15 @@ var Gallery = function (element, options) {
     if (settings.paginator === true) {
       paginator.moveDefaultPaginatorToSlide(currentSlide);
     }
-
     return currentSlide;
   };
 
-  Gallery.prototype.moveRight = function () {
+  this.moveRight = function () {
     var $this = $(this);
     if ( animate === true
       && settings.stopAfterUserAction === true) {
       this.stopSlideShow();
     }
-    
     currentSlide = this.moveToSlide(++currentSlide);
     if (settings.paginator === true) {
       paginator.moveDefaultPaginatorToSlide(currentSlide);
@@ -142,20 +140,20 @@ var Gallery = function (element, options) {
   /*----------------------------------------------------*/
   
   /* ANIMATION EFFECTS */
-    function noFx () {
+    Gallery.prototype.noFx = function() {
       $children.css('display', 'none');
       $children.filter('.active').css('display', 'block');
     };
-    function fade () {
+    Gallery.prototype.fade = function () {
       $children.stop(true).fadeOut(parseInt(settings.transition_duration / 2, 10));
       $children.filter('.active').delay(parseInt(settings.transition_duration / 2, 10)).fadeIn(parseInt(settings.transition_duration / 2, 10));
     };
-    function crossFade () {
+    Gallery.prototype.crossFade = function () {
       $children.stop(true).fadeOut(parseInt(settings.transition_duration / 2, 10));
       $children.filter('.active').fadeIn(parseInt(settings.transition_duration / 2, 10));
     };
-    function slide (index) {
-      var newLeft = -(index * increment);       
+    Gallery.prototype.slide = function (index) {
+      var newLeft = -(index * increment);
       $gallery.stop(true, false).animate({'margin-left': newLeft}, parseInt(settings.transition_duration, 10));
     };
     /*-------------------------------------------------------*/
@@ -178,7 +176,7 @@ var Gallery = function (element, options) {
         animate = true;
       }
       return setInterval(function () {
-        self.moveToSlide(++currentSlide);
+        self.moveRight();
       }, settings.timeout);
     };
     
@@ -317,13 +315,10 @@ $.fn.gallerize = function(method, options) {
     }
     return;
   }
-  else if (!$(this).attr("id")) {
-    $.error("gallery must have an id");
-    return false;
+  else if (!$(this).data("gallerize-id")) {
+    $(this).data("gallerize-id", galleries_index++);
   }
-  else {
-    id = $(this).attr("id");
-  }
+  id = $(this).data("gallerize-id");
 //------------------------------------
 
   if (method && typeof method == 'object') {
