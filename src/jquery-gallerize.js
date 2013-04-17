@@ -304,7 +304,9 @@ var default_settings = {
 };  
 
 $.fn.gallerize = function(method, options) {
-  options = options || {};
+  if (options !== 0 ) {
+      options = options || {};
+  }
   var id,
       settings;
 
